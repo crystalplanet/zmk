@@ -33,4 +33,4 @@ config ZMK_KSCAN_MATRIX_POLLING
 config ZMK_USB
 	default y
 
-#endif # BOARD_ORION_92
+endif # BOARD_ORION_92

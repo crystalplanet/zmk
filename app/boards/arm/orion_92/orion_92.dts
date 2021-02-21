@@ -7,7 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 
-#include <dt-bindings/zmk/matrix-transform.h>
+#include <dt-bindings/zmk/matrix_transform.h>
 
 / {
 	model = "Orion 92";
@@ -69,12 +69,12 @@
 
 	vbatt {
 		compatible = "zmk,battery-voltage-divider";
-		label="BATTERY"
+		label="BATTERY";
 		io-channels = <&adc 1>;
 		output-ohms = <2200000>;
 		full-ohms = <(2200000 + 750000)>;
 	};
-}
+};
 
 &adc {
 	status = "okay";

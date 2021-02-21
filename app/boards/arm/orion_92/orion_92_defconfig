@@ -17,7 +17,7 @@ CONFIG_I2C_0=y
 CONFIG_GPIO=y
 
 # Enable MPU
-CONFIG_MPU=y
+CONFIG_ARM_MPU=y
 
 # Enable reset pin
 CONFIG_GPIO_AS_PINRESET=y
