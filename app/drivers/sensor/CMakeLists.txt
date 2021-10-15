@@ -2,4 +2,5 @@
 # SPDX-License-Identifier: MIT
 
 add_subdirectory_ifdef(CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER battery_voltage_divider)
+add_subdirectory_ifdef(CONFIG_CY8CMBR3106S cy8cmbr3106s)
 add_subdirectory_ifdef(CONFIG_EC11 ec11)

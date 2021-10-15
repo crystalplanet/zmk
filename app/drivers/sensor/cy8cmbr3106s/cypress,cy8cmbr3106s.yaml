@@ -1,0 +1,6 @@
+description: |
+  Driver for the CY8CMBR3106s Touch Sensor Controller
+
+compatible: "cypress,cy8cmbr3106s"
+
+include: i2c-device.yaml

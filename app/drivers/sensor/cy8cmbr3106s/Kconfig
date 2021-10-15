@@ -1,0 +1,12 @@
+# Copyright (c) 2020 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+config CY8CMBR3106S
+	bool "CY8CMBR3106S Touch Controller"
+	depends on I2C
+	help
+		Enable a CY8CMBR3106S Touch Controller.
+
+			The CY8CMBR3xxx CapSense ExpressTM controllers enable advanced,
+			yet easy-to-implement, user interface solutions using capacitive
+			touch sensing.
