@@ -1,0 +1,15 @@
+# Copyright (c) 2020, The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+description: Cypress CY8CMBR3106s Touch COntroller
+
+compatible: "cypress,cy8cmbr3106s"
+
+include: i2c-device.yaml
+
+properties:
+  trigger-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin for hardware shutdown functionality.

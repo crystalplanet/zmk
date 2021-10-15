@@ -2,4 +2,5 @@
 # SPDX-License-Identifier: MIT
 
 rsource "battery/Kconfig"
+rsource "cy8cmbr3106s/Kconfig"
 rsource "ec11/Kconfig"
