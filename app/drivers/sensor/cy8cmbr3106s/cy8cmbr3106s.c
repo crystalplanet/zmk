@@ -18,7 +18,19 @@
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #define CY8CMBR3106S_REG_CTRL_CMD 0x86
+#define CY8CMBR3106S_REG_CTRL_CMD_ERROR 0x89
+
+#define CY8CMBR3106S_REG_SENSOR_ENABLE 0x00
+#define CY8CMBR3106S_REG_FSS_ENABLE 0x02
+
 #define CY8CMBR3106S_REG_SPO 0x4c
+
+#define CY8CMBR3106S_REG_DEVICE_CONFIG_0 0x4d
+#define CY8CMBR3106S_REG_DEVICE_CONFIG_1 0x4e
+#define CY8CMBR3106S_REG_DEVICE_CONFIG_2 0x4f
+#define CY8CMBR3106S_REG_DEVICE_CONFIG_3 0x50
+
+#define CY8CMBR3106S_REG_REFRESH_CONTROL 0x52
 
 #define CY8CMBR3106S_REG_SLIDER_CONFIG 0x5d
 #define CY8CMBR3106S_REG_SLIDER_1_CONFIG 0x61
@@ -37,6 +49,9 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define CY8CMBR3106S_REG_SLIDER_2_POSITION 0xb2
 #define CY8CMBR3106S_REG_SLIDER_2_LIFTOFF 0xb3
 
+#define CY8CMBR3106S_REG_CALC_CRC 0x94
+#define CY8CMBR3106S_REG_CONFIG_CRC 0x7e
+
 struct cy8cmbr3106s_config {
     char *bus;
     int reg;
@@ -53,6 +68,7 @@ struct cy8cmbr3106s_data {
 
     uint8_t slider_position;
 
+    const struct device *dev;
     struct gpio_callback trigger_callback;
 
     const struct sensor_trigger *trigger;
@@ -65,15 +81,8 @@ static int cy8cmbr3106s_wake(const struct device *dev) {
     const struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
 
-    // i2c_burst_write(data->i2c, config->reg, 0x00, NULL, 0);
-    // i2c_burst_write(data->i2c, config->reg, 0x00, NULL, 0);
-    // i2c_burst_write(data->i2c, config->reg, 0x00, NULL, 0);
-
-    // return 0;
-
-    for (int i=0; i<10; ++i) {
-        // TODO: check i2c_burst_write again
-        if (!i2c_burst_write(data->i2c, config->reg, 0x00, NULL, 0)) {
+    for (int i=0; i<3; ++i) {
+        if (!i2c_reg_read_byte(data->i2c, config->reg, 0x00, NULL)) {
             return 0;
         }
     }
@@ -86,37 +95,18 @@ static int cy8cmbr3106s_reg_write(const struct device *dev, uint8_t addr, uint8_
     const struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
 
-    // if (cy8cmbr3106s_wake(dev)) {
-    //     return -EIO;
-    // }
-
-    // if (i2c_reg_write_byte(data->i2c, config->reg, addr, value)) {
-    //     // CY8CMBR3106S can will NACK the first transation when in deep sleep
-    //     // in which case we need to retry twice within the next 340ms
-
-    //     k_msleep(100);
-    //     i2c_reg_write_byte(data->i2c, config->reg, addr, value);
-    //     k_msleep(100);
-    for (int i=0; i<10; ++i) {
-        if (!i2c_reg_write_byte(data->i2c, config->reg, addr, value)) {
-            return 0;
-        }
-
-        k_msleep(50);
+    if (i2c_reg_write_byte(data->i2c, config->reg, addr, value)) {
+        LOG_ERR("Failed writing value 0x%x to register address 0x%x on device 0x%x.", value, addr,
+            config->reg);
+        return -EIO;
     }
 
-    LOG_ERR("Failed writing value 0x%x to register address 0x%x on device 0x%x.", value, addr,
-        config->reg);
-    return -EIO;
+    return 0;
 }
 
 static int cy8cmbr3106s_reg_read(const struct device *dev, uint8_t addr, uint8_t *value) {
     const struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
-
-    // if (cy8cmbr3106s_wake(dev)) {
-    //     return -EIO;
-    // }
 
     if (i2c_reg_read_byte(data->i2c, config->reg, addr, value)) {
         LOG_ERR("Failed reading from register address %x on device %x.", addr, config->reg);
@@ -137,36 +127,69 @@ static int cy8cmbr3106s_init_i2c(const struct device *dev) {
         return -ENODEV;
     }
 
-    // Set up interrupt handler on the GPIO!
+    // Make sure the device is active before any interaction
+    cy8cmbr3106s_wake(dev);
 
-    // Make sure the device is active before writing to it
-    // cy8cmbr3106s_wake(dev);
+    // Disable individual button sensors
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SENSOR_ENABLE, 0x00);
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SENSOR_ENABLE + 1, 0x00);
 
-    // Reset the device
-    // cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_CTRL_CMD, 0xff);
+    // Disable FSS
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_FSS_ENABLE, 0x00);
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_FSS_ENABLE + 1, 0x00);
 
-    // k_msleep(5);
+    // Set device configuration registers
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_DEVICE_CONFIG_0, 0x02); // 0x02 = default ??? 0x01 = median filder, 0x02 = iir filter
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_DEVICE_CONFIG_1, 0x01); // Run diagnostics
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_DEVICE_CONFIG_2, 0b00000001); // default 0b00001000 // last bit = shield, 5:4 = slider auto-reset
 
+    // state timeout
+    cy8cmbr3106s_reg_write(dev, 0x55, 10); // sleep after 10s since last touch
+
+    // DOUBLE CHECK THE VALUE HERE!
     // Enable shield electrode on SPO1 and host interrupt on SPO0.
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SPO, 0x24);
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SPO, 0b00100100); // default = 0x00010100
+
+    // Set the refresh interval, 1-25 (unit of 20ms)
+    // cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_REFRESH_CONTROL, 0x06); //06 default = 120ms
 
     // Set slider configuration
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_CONFIG, 0x02);
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_CONFIG, 0x02); // 0x00 def || experiment with this one to see if it makes a difference
 
-    // Configure slider one
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_CONFIG, 0x18);
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_RESOLUTION, 0xff);
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_THRESHOLD, 0x0a); // 10 counts to start with
+    // Configure slider onep
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_CONFIG, 0b00000101); // lower or higher sensivity ? | actually default!!
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_RESOLUTION, 100); // default 45
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_THRESHOLD, 128); //  counts to start with, default 128
 
     // Configure slider two
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_2_CONFIG, 0x1d);
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_2_RESOLUTION, 0x00); // Ignored if both active
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_2_THRESHOLD, 0x00); // Ignored if both active
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_2_CONFIG, 0b00000101);
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_2_RESOLUTION, 100); // Ignored if both active
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_2_THRESHOLD, 128); // Ignored if both active
 
     // Other settings go here, stick with the default initially
     // cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_BASELINE, 0x40);
     // cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_NEGATIVE_NOISE, 0x40);
     // cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_NOISE, 0x40);
+
+    // Calculate the checksum for the current configuration.
+    // It takes 220ms before the new checksum becomes available.
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_CTRL_CMD, 0x03);
+    k_msleep(220);
+
+    // Read and save the new checksum
+    uint8_t config_crc[2];
+
+    i2c_burst_read(data->i2c, config->reg, CY8CMBR3106S_REG_CALC_CRC, &config_crc[0], 2);
+    i2c_burst_write(data->i2c, config->reg, CY8CMBR3106S_REG_CONFIG_CRC, &config_crc[0], 2);
+
+    // Save the current configuration
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_CTRL_CMD, 0x02);
+    k_msleep(300);
+
+    cy8cmbr3106s_wake(dev);
+
+    // Reset the device
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_CTRL_CMD, 0xff);
 
     return 0;
 }
@@ -174,13 +197,21 @@ static int cy8cmbr3106s_init_i2c(const struct device *dev) {
 static void cy8cmbr3106s_trigger_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
     struct cy8cmbr3106s_data *data = CONTAINER_OF(cb, struct cy8cmbr3106s_data, trigger_callback);
 
-    // Handle in global thread?
+    // Handle interrupt in the global thread
     k_work_submit(&data->work);
+}
+
+static void cy8cmbr3106s_work_callback(struct k_work *work) {
+    struct cy8cmbr3106s_data *data = CONTAINER_OF(work, struct cy8cmbr3106s_data, work);
+
+    data->handler(data->dev, data->trigger);
 }
 
 static int cy8cmbr3106s_init_interrupt(const struct device *dev) {
     struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
+
+    data->dev = dev;
 
     data->gpio = device_get_binding(config->trigger_port);
 
@@ -189,11 +220,7 @@ static int cy8cmbr3106s_init_interrupt(const struct device *dev) {
         return -ENODEV;
     }
 
-    // INTERRUPT IS ACTIVE LOW, SO GPIO NEEDS TO BE DRIVEN HIGH EXTERNALLY!!!
-
-    // TODO: whatever this is
-    //       should this actually be an input? Or do we need to generate some current on here?
-    gpio_pin_configure(data->gpio, config->trigger_pin, (GPIO_INPUT | config->trigger_flags));
+    gpio_pin_configure(data->gpio, config->trigger_pin, (GPIO_INPUT | GPIO_INT_EDGE_TO_ACTIVE | config->trigger_flags));
 
     gpio_init_callback(&data->trigger_callback, cy8cmbr3106s_trigger_callback, BIT(config->trigger_pin));
 
@@ -201,6 +228,8 @@ static int cy8cmbr3106s_init_interrupt(const struct device *dev) {
         LOG_ERR("Failed to set the trigger callback on pin %d (%s).", config->trigger_pin, config->trigger_port);
         return -EIO;
     }
+
+    k_work_init(&data->work, cy8cmbr3106s_work_callback);
 
     return 0;
 }
@@ -219,13 +248,6 @@ static int cy8cmbr3106s_trigger_set(const struct device *dev, const struct senso
     struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
 
-    // this is where the interrups is actually configured!!!
-
-    // maybe need to turn this on and off before setting the two below?
-    if (gpio_pin_interrupt_configure(data->gpio, config->trigger_pin, GPIO_INT_EDGE_FALLING)) {
-        // failed!
-    }
-
     data->trigger = trigger;
     data->handler = handler;
 
@@ -239,7 +261,7 @@ static int cy8cmbr3106s_sample_fetch(const struct device *dev, enum sensor_chann
         return -EIO;
     }
 
-    cy8cmbr3106s_reg_read(data->i2c, CY8CMBR3106S_REG_SLIDER_1_POSITION, &data->slider_position);
+    cy8cmbr3106s_reg_read(dev, CY8CMBR3106S_REG_SLIDER_1_POSITION, &data->slider_position);
 
     return 0;
 }

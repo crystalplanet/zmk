@@ -27,7 +27,7 @@ static void slider_trigger_handler(const struct device *dev, struct sensor_trigg
     sensor_sample_fetch(dev);
     sensor_channel_get(dev, SENSOR_CHAN_POS_DX, &position);
 
-    LOG_INF("Slider position: %d\n", position.val1);
+    LOG_INF("Slider position: %d", position.val1);
 }
 
 void main(void) {
