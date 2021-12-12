@@ -3,5 +3,6 @@
 
 add_subdirectory(gpio)
 add_subdirectory(kscan)
+add_subdirectory(led_strip)
 add_subdirectory(sensor)
 add_subdirectory(display)
