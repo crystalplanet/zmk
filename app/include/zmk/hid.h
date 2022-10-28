@@ -135,9 +135,6 @@ static const uint8_t zmk_hid_report_desc[] = {
     /* REPORT ID (1) */
     HID_GI_REPORT_ID,
     0x02,
-    /* USAGE_PAGE (Consumer) */
-    HID_GI_USAGE_PAGE,
-    HID_USAGE_CONSUMER,
 
 #if IS_ENABLED(CONFIG_ZMK_HID_CONSUMER_REPORT_USAGES_BASIC)
     /* LOGICAL_MINIMUM (0) */
@@ -183,6 +180,36 @@ static const uint8_t zmk_hid_report_desc[] = {
     CONFIG_ZMK_HID_CONSUMER_REPORT_SIZE,
     HID_MI_INPUT,
     0x00,
+
+#if IS_ENABLED(CONFIG_ZMK_HID_VOLUME_LINEAR_CONTROL)
+    // /* COLLECTION (Physical) */
+    // HID_MI_COLLECTION,
+    // COLLECTION_PHYSICAL,
+    /* USAGE_PAGE (Consumer) */
+    HID_GI_USAGE_PAGE,
+    HID_USAGE_CONSUMER,
+    /* USAGE (Volume Controll) */
+    HID_LI_USAGE,
+    HID_USAGE_CONSUMER_VOLUME,
+    /* LOGICAL_MINIMUM(0) */
+    HID_GI_LOGICAL_MIN(1),
+    0x00,
+    /* LOGICAL_MAXIMUM(100) */
+    HID_GI_LOGICAL_MAX(1),
+    0x64,
+    /* REPORT_SIZE (8) */
+    HID_GI_REPORT_SIZE,
+    0x08,
+    /* REPORT_COUNT (1) */
+    HID_GI_REPORT_COUNT,
+    0x01,
+    /* INPUT (Data,Variable,Absolute,No Wrap,Linear,No Preferred,Null) */
+    HID_MI_INPUT,
+    // 0x42,
+    0x62,
+    // HID_MI_COLLECTION_END,
+#endif
+
     /* END COLLECTION */
     HID_MI_COLLECTION_END,
 };
@@ -215,6 +242,9 @@ struct zmk_hid_consumer_report_body {
 #elif IS_ENABLED(CONFIG_ZMK_HID_CONSUMER_REPORT_USAGES_FULL)
     uint16_t keys[CONFIG_ZMK_HID_CONSUMER_REPORT_SIZE];
 #endif
+#if IS_ENABLED(CONFIG_ZMK_HID_VOLUME_LINEAR_CONTROL)
+    uint8_t volume;
+#endif
 } __packed;
 
 struct zmk_hid_consumer_report {
@@ -235,6 +265,10 @@ void zmk_hid_keyboard_clear();
 
 int zmk_hid_consumer_press(zmk_key_t key);
 int zmk_hid_consumer_release(zmk_key_t key);
+#if IS_ENABLED(CONFIG_ZMK_HID_VOLUME_LINEAR_CONTROL)
+int zmk_hid_consumer_volume_set(uint8_t volume);
+int zmk_hid_consumer_volume_reset();
+#endif
 void zmk_hid_consumer_clear();
 
 struct zmk_hid_keyboard_report *zmk_hid_get_keyboard_report();

@@ -13,7 +13,15 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 static struct zmk_hid_keyboard_report keyboard_report = {
     .report_id = 1, .body = {.modifiers = 0, ._reserved = 0, .keys = {0}}};
 
-static struct zmk_hid_consumer_report consumer_report = {.report_id = 2, .body = {.keys = {0}}};
+static struct zmk_hid_consumer_report consumer_report = {
+    .report_id = 2,
+    .body = {
+        .keys = {0},
+#if IS_ENABLED(CONFIG_ZMK_HID_VOLUME_LINEAR_CONTROL)
+        .volume = 0xff,
+#endif
+    }
+};
 
 // Keep track of how often a modifier was pressed.
 // Only release the modifier if the count is 0.
@@ -167,7 +175,31 @@ int zmk_hid_consumer_release(zmk_key_t code) {
     return 0;
 };
 
-void zmk_hid_consumer_clear() { memset(&consumer_report.body, 0, sizeof(consumer_report.body)); }
+#if IS_ENABLED(CONFIG_ZMK_HID_VOLUME_LINEAR_CONTROL)
+int zmk_hid_consumer_volume_set(uint8_t volume) {
+    LOG_DBG("SET VOLUME TO: %d", volume);
+
+    if (volume > 100) {
+        return -EDOM;
+    }
+
+    consumer_report.body.volume = volume;
+    return 0;
+}
+
+int zmk_hid_consumer_volume_reset() {
+    consumer_report.body.volume = 0xff;
+    return 0;
+}
+#endif
+
+void zmk_hid_consumer_clear() {
+    memset(&consumer_report.body.keys, 0, sizeof(consumer_report.body.keys));
+
+#if IS_ENABLED(CONFIG_ZMK_HID_VOLUME_LINEAR_CONTROL)
+    consumer_report.body.volume = 0xff;
+#endif
+}
 
 struct zmk_hid_keyboard_report *zmk_hid_get_keyboard_report() {
     return &keyboard_report;

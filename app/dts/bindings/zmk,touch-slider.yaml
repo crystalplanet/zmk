@@ -1,0 +1,9 @@
+description: |
+  Defines a touch slider.
+
+compatible: "zmk,touch_slider"
+
+properties:
+  sensor:
+    type: phandle
+    required: true

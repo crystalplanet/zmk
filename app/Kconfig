@@ -43,6 +43,7 @@ config ZMK_HID_REPORT_TYPE_NKRO
 	  from working with some BIOS/UEFI versions that only support "boot keyboard" support.
 	  This option also prevents using some infrequently used higher range HID usages.
 
+
 endchoice
 
 if ZMK_HID_REPORT_TYPE_HKRO
@@ -74,6 +75,11 @@ config ZMK_HID_CONSUMER_REPORT_USAGES_BASIC
 	  hosts. Allows for broader compatibability with more host OSes.
 
 endchoice
+
+config ZMK_HID_VOLUME_LINEAR_CONTROL
+	bool "Linear volume control"
+	help
+	  Enables volume control using absolute values.
 
 menu "Output Types"
 
@@ -372,6 +378,15 @@ config ZMK_EXT_POWER
 	default y
 
 #Power Management
+endmenu
+
+menu "Sensors"
+
+config ZMK_TOUCH_SLIDER
+	bool "Touch slider"
+	select ZMK_HID_VOLUME_LINEAR_CONTROL
+
+#Sensors
 endmenu
 
 menu "Combo options"

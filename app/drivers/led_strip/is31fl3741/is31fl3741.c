@@ -231,6 +231,19 @@ int static is31fl3741_init(const struct device *dev) {
         px_buffer[i] = 0;
     }
 
+    // for (int i = 0; i<128; ++i) {
+    //     if (!i2c_write(data->i2c, NULL, 0, i)) {
+    //         LOG_DBG( "I2C DEVICE @ %x", i );
+    //     }
+    // }
+
+    // uint8_t value = 0xff;
+    // if (i2c_write(data->i2c, &value, 1, 0x2f)) {
+    //     LOG_DBG("CANT WRITE TO POT");
+    // } else {
+    //     LOG_DBG("SUCCESS!");
+    // }
+
     return 0;
 }
 

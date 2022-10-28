@@ -78,8 +78,8 @@ struct cy8cmbr3106s_data {
 };
 
 static int cy8cmbr3106s_wake(const struct device *dev) {
-    const struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
+    const struct cy8cmbr3106s_data *data = dev->data;
 
     for (int i=0; i<3; ++i) {
         if (!i2c_reg_read_byte(data->i2c, config->reg, 0x00, NULL)) {
@@ -92,8 +92,8 @@ static int cy8cmbr3106s_wake(const struct device *dev) {
 }
 
 static int cy8cmbr3106s_reg_write(const struct device *dev, uint8_t addr, uint8_t value) {
-    const struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
+    const struct cy8cmbr3106s_data *data = dev->data;
 
     if (i2c_reg_write_byte(data->i2c, config->reg, addr, value)) {
         LOG_ERR("Failed writing value 0x%x to register address 0x%x on device 0x%x.", value, addr,
@@ -105,11 +105,11 @@ static int cy8cmbr3106s_reg_write(const struct device *dev, uint8_t addr, uint8_
 }
 
 static int cy8cmbr3106s_reg_read(const struct device *dev, uint8_t addr, uint8_t *value) {
-    const struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
+    const struct cy8cmbr3106s_data *data = dev->data;
 
     if (i2c_reg_read_byte(data->i2c, config->reg, addr, value)) {
-        LOG_ERR("Failed reading from register address %x on device %x.", addr, config->reg);
+        LOG_ERR("Failed reading from register address 0x%x on device 0x%x.", addr, config->reg);
         return -EIO;
     }
 
@@ -117,8 +117,8 @@ static int cy8cmbr3106s_reg_read(const struct device *dev, uint8_t addr, uint8_t
 }
 
 static int cy8cmbr3106s_init_i2c(const struct device *dev) {
-    struct cy8cmbr3106s_data *data = dev->data;
     const struct cy8cmbr3106s_config *config = dev->config;
+    struct cy8cmbr3106s_data *data = dev->data;
 
     data->i2c = device_get_binding(config->bus);
 
@@ -139,14 +139,13 @@ static int cy8cmbr3106s_init_i2c(const struct device *dev) {
     cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_FSS_ENABLE + 1, 0x00);
 
     // Set device configuration registers
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_DEVICE_CONFIG_0, 0x02); // 0x02 = default ??? 0x01 = median filder, 0x02 = iir filter
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_DEVICE_CONFIG_1, 0x01); // Run diagnostics
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_DEVICE_CONFIG_0, 0x02);
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_DEVICE_CONFIG_1, 0x00);
     cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_DEVICE_CONFIG_2, 0b00000001); // default 0b00001000 // last bit = shield, 5:4 = slider auto-reset
 
-    // state timeout
+    // Sleep timeout
     cy8cmbr3106s_reg_write(dev, 0x55, 10); // sleep after 10s since last touch
 
-    // DOUBLE CHECK THE VALUE HERE!
     // Enable shield electrode on SPO1 and host interrupt on SPO0.
     cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SPO, 0b00100100); // default = 0x00010100
 
@@ -154,12 +153,12 @@ static int cy8cmbr3106s_init_i2c(const struct device *dev) {
     // cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_REFRESH_CONTROL, 0x06); //06 default = 120ms
 
     // Set slider configuration
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_CONFIG, 0x02); // 0x00 def || experiment with this one to see if it makes a difference
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_CONFIG, 0x02); // 0x00 default
 
-    // Configure slider onep
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_CONFIG, 0b00000101); // lower or higher sensivity ? | actually default!!
+    // Configure slider one
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_CONFIG, 0b00000101);
     cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_RESOLUTION, 100); // default 45
-    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_THRESHOLD, 128); //  counts to start with, default 128
+    cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_1_THRESHOLD, 128); // default
 
     // Configure slider two
     cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_SLIDER_2_CONFIG, 0b00000101);
@@ -190,6 +189,8 @@ static int cy8cmbr3106s_init_i2c(const struct device *dev) {
 
     // Reset the device
     cy8cmbr3106s_reg_write(dev, CY8CMBR3106S_REG_CTRL_CMD, 0xff);
+
+    // @todo: extract configuration into separate function, only run it if checksum doesn't match.
 
     return 0;
 }
@@ -246,7 +247,6 @@ static int cy8cmbr3106s_init(const struct device *dev) {
 
 static int cy8cmbr3106s_trigger_set(const struct device *dev, const struct sensor_trigger *trigger, sensor_trigger_handler_t handler) {
     struct cy8cmbr3106s_data *data = dev->data;
-    const struct cy8cmbr3106s_config *config = dev->config;
 
     data->trigger = trigger;
     data->handler = handler;
@@ -297,8 +297,8 @@ static const struct sensor_driver_api cy8cmbr3106s_api = {
         .trigger_flags = DT_INST_GPIO_FLAGS(idx, trigger_gpios),                               \
     };                                                                                         \
                                                                                                \
-    DEVICE_AND_API_INIT(cy8cmbr3106s_##idx, DT_INST_LABEL(idx), &cy8cmbr3106s_init,            \
-                        &cy8cmbr3106s_##idx##_data, &cy8cmbr3106s_##idx##_config, POST_KERNEL, \
-                        CONFIG_SENSOR_INIT_PRIORITY, &cy8cmbr3106s_api);
+    DEVICE_DT_INST_DEFINE(idx, &cy8cmbr3106s_init, NULL, &cy8cmbr3106s_##idx##_data,           \
+                          &cy8cmbr3106s_##idx##_config, POST_KERNEL,                           \
+                          CONFIG_SENSOR_INIT_PRIORITY, &cy8cmbr3106s_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CY8CMBR3106S_DEVICE);
