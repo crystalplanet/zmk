@@ -85,6 +85,7 @@ target_sources_ifdef(CONFIG_ZMK_ANIMATION app PRIVATE src/animation/animation_co
 target_sources_ifdef(CONFIG_ZMK_ANIMATION app PRIVATE src/animation/animation_control.c)
 target_sources_ifdef(CONFIG_ZMK_ANIMATION app PRIVATE src/animation/animation_ripple.c)
 target_sources_ifdef(CONFIG_ZMK_ANIMATION app PRIVATE src/animation/animation_solid.c)
+target_sources_ifdef(CONFIG_ZMK_ANIMATION app PRIVATE src/animation/animation_wpm.c)
 target_sources_ifdef(CONFIG_ZMK_ANIMATION app PRIVATE src/animation/animation.c)
 target_sources_ifdef(CONFIG_ZMK_ANIMATION app PRIVATE src/behaviors/behavior_animation.c)
 
