@@ -1,7 +1,7 @@
 # Copyright (c) 2020 The ZMK Contributors
 # SPDX-License-Identifier: MIT
 
-if SHIELD_MICRODOX_LEFT
+if SHIELD_MICRODOX_LEFT || SHIELD_MICRODOX_V2_LEFT
 
 config ZMK_KEYBOARD_NAME
     default "Microdox"
@@ -11,7 +11,7 @@ config ZMK_SPLIT_ROLE_CENTRAL
 
 endif
 
-if SHIELD_MICRODOX_LEFT || SHIELD_MICRODOX_RIGHT
+if SHIELD_MICRODOX_LEFT || SHIELD_MICRODOX_RIGHT || SHIELD_MICRODOX_V2_LEFT || SHIELD_MICRODOX_V2_RIGHT
 
 config ZMK_SPLIT
     default y
@@ -24,9 +24,6 @@ config I2C
 config SSD1306
     default y
 
-config SSD1306_REVERSE_MODE
-    default y
-
 endif # ZMK_DISPLAY
 
 if LVGL
@@ -34,7 +31,7 @@ if LVGL
 config LV_Z_VDB_SIZE
     default 64
 
-config LV_Z_DPI
+config LV_DPI_DEF
     default 148
 
 config LV_Z_BITS_PER_PIXEL

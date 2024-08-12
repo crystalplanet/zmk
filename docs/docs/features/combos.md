@@ -10,7 +10,7 @@ Combo keys are a way to combine multiple keypresses to output a different key. F
 
 Combos configured in your `.keymap` file, but are separate from the `keymap` node found there, since they are processed before the normal keymap. They are specified like this:
 
-```
+```dts
 / {
     combos {
         compatible = "zmk,combos";
@@ -30,6 +30,7 @@ Combos configured in your `.keymap` file, but are separate from the `keymap` nod
 - `layers = <0 1...>` will allow limiting a combo to specific layers. This is an _optional_ parameter, when omitted it defaults to global scope.
 - `bindings` is the behavior that is activated when the behavior is pressed.
 - (advanced) you can specify `slow-release` if you want the combo binding to be released when all key-positions are released. The default is to release the combo as soon as any of the keys in the combo is released.
+- (advanced) you can specify a `require-prior-idle-ms` value much like for [hold-taps](behaviors/hold-tap.mdx#require-prior-idle-ms). If any non-modifier key is pressed within `require-prior-idle-ms` before a key in the combo, the combo will not trigger.
 
 :::info
 
@@ -37,14 +38,14 @@ Key positions are numbered like the keys in your keymap, starting at 0. So, if t
 
 :::
 
-### Advanced usage
+### Advanced Usage
 
 - Partially overlapping combos like `0 1` and `0 2` are supported.
 - Fully overlapping combos like `0 1` and `0 1 2` are supported.
 - You are not limited to `&kp` bindings. You can use all ZMK behaviors there, like `&mo`, `&bt`, `&mt`, `&lt` etc.
 
-:::note Source-specific behaviors on split keyboards
-Invoking a source-specific behavior such as one of the [reset behaviors](behaviors/reset.md) using a combo will always trigger it on the central side of the keyboard, regardless of the side that the keys corresponding to `key-positions` are on.
+:::note[Source-specific behaviors on split keyboards]
+Invoking a [source-specific behavior](split-keyboards.md#source-locality-behaviors) such as one of the [reset behaviors](behaviors/reset.md) using a combo will always trigger it on the central side of the keyboard, regardless of the side that the keys corresponding to `key-positions` are on.
 :::
 
-See [combo configuration](/docs/config/combos) for advanced configuration options.
+See [combo configuration](../config/combos.md) for advanced configuration options.

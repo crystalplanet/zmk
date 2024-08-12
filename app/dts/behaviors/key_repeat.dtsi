@@ -8,11 +8,11 @@
 
 / {
     behaviors {
-        /omit-if-no-ref/ key_repeat: behavior_key_repeat {
+        /omit-if-no-ref/ key_repeat: key_repeat {
             compatible = "zmk,behavior-key-repeat";
-            label = "KEY_REPEAT";
             #binding-cells = <0>;
             usage-pages = <HID_USAGE_KEY>;
+            display-name = "Key Repeat";
         };
     };
 };
