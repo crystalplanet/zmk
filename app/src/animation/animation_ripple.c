@@ -99,7 +99,8 @@ static void animation_ripple_render_frame(const struct device *dev, struct anima
 
         // Render all pixels for each event
         for (int j = 0; j < config->pixel_map_size; ++j) {
-            uint8_t pixel_distance = zmk_animation_get_pixel_distance(event->pixel_id, j);
+            uint8_t pixel_distance =
+                zmk_animation_get_pixel_distance(event->pixel_id, pixel_map[j]);
 
             if (config->ripple_width > abs(pixel_distance - event->distance)) {
                 float intensity = 1.0f - (float)abs(pixel_distance - event->distance) /
@@ -184,7 +185,7 @@ static const struct animation_api animation_ripple_api = {
         .pixel_map = &animation_ripple_##idx##_pixel_map[0],                                       \
         .pixel_map_size = DT_INST_PROP_LEN(idx, pixels),                                           \
         .event_buffer_size = DT_INST_PROP(idx, buffer_size),                                       \
-        .blending_mode = DT_INST_PROP(idx, blending_mode),                                         \
+        .blending_mode = DT_INST_ENUM_IDX(idx, blending_mode),                                     \
         .distance_per_frame =                                                                      \
             (255 * 1000 / DT_INST_PROP(idx, duration)) / CONFIG_ZMK_ANIMATION_FPS,                 \
         .ripple_width = DT_INST_PROP(idx, ripple_width) / 2,                                       \

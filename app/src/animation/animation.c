@@ -25,9 +25,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #define PHANDLE_TO_DEVICE(node_id, prop, idx) DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),
 
-#define PHANDLE_TO_CHAIN_LENGTH(node_id, prop, idx)                                                \
-    DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx, chain_length),
-
 #define PHANDLE_TO_PIXEL(node_id, prop, idx)                                                       \
     {                                                                                              \
         .position_x = DT_PHA_BY_IDX(node_id, prop, idx, position_x),                               \
@@ -47,8 +44,7 @@ static const size_t drivers_size = DT_INST_PROP_LEN(0, drivers);
 /**
  * Array containing the number of LEDs handled by each device.
  */
-static const uint8_t pixels_per_driver[] = {
-    DT_INST_FOREACH_PROP_ELEM(0, drivers, PHANDLE_TO_CHAIN_LENGTH)};
+static const size_t pixels_per_driver[] = DT_INST_PROP(0, chain_lengths);
 
 /**
  * Pointer to the root animation
@@ -125,7 +121,7 @@ static void zmk_animation_tick(struct k_work *work) {
     for (size_t i = 0; i < drivers_size; ++i) {
         led_strip_update_rgb(drivers[i], &px_buffer[pixels_updated], pixels_per_driver[i]);
 
-        pixels_updated += (size_t)pixels_per_driver;
+        pixels_updated += pixels_per_driver[i];
     }
 }
 
